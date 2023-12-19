@@ -1,0 +1,123 @@
+import { baseRequest } from "./baseService";
+import { baseRequestNonToken } from "./baseServiceNonToken";
+
+export const requestLogin = async (data: any): Promise<any> => {
+	const response = await baseRequestNonToken({
+		url: `/api/v1/auth/login`,
+		method: "POST",
+		data: data,
+	});
+
+	return await new Promise((res) => {
+		setTimeout(() => {
+			let resFake={
+				access_token:"eyJhbGciOiJIUzI1NiJ9.eyJSb2xlIjoiQWRtaW4iLCJJc3N1ZXIiOiJJc3N1ZXIiLCJVc2VybmFtZSI6IkphdmFJblVzZSIsImV4cCI6MTczMzQ3MjM0MywiaWF0IjoxNzAxODQ5OTQzfQ.ZIuD0_yEx_bi7W9EEUCo1ttTKPlyy2_5x4oN5Tiyang",
+				refresh_token:"eyJhbGciOiJIUzI1NiJ9",
+			}
+			res(resFake)
+			// res(response);
+		}, 1000);
+	});
+};
+
+export const requestLogout = async (): Promise<any> => {
+	const response = await baseRequest({
+		url: `/api/v1/auth/logout`,
+		method: "POST",
+	});
+
+	return await new Promise((res) => {
+		setTimeout(() => {
+			res(response);
+		}, 1000);
+	});
+};
+
+export const refreshToken = async (refreshToken): Promise<any> => {
+	const res = await baseRequestNonToken({
+		url: `/api/v1/auth/refresh`,
+		method: "POST",
+		headers: {
+			Authorization: `Bearer ${refreshToken}`,
+		},
+	});
+	return res;
+};
+
+export const registerAccount = async (data: any): Promise<any> => {
+	const response = await baseRequestNonToken({
+		url: `/api/v1/auth/register`,
+		method: "POST",
+		data,
+	});
+	return await new Promise((res) => {
+		setTimeout(() => {
+			res(response);
+		}, 1000);
+	});
+};
+
+export const requestOTP = async (email: string): Promise<any> => {
+	const response = await baseRequestNonToken({
+		url: `/api/v1/auth/reset_password/create_otp`,
+		method: "POST",
+		data: { email },
+	});
+
+	return await new Promise((res) => {
+		setTimeout(() => {
+			res(response);
+		}, 1000);
+	});
+};
+
+export const validOTP = async ({ email, otp }: { email: string; otp: string }): Promise<any> => {
+	const response = await baseRequestNonToken({
+		url: `/api/v1/auth/reset_password/check_otp`,
+		method: "POST",
+		data: { email, otp },
+	});
+	return await new Promise((res) => {
+		setTimeout(() => {
+			res(response);
+		}, 1000);
+	});
+};
+
+export const resetPassword = async (data: any): Promise<any> => {
+	const response = await baseRequestNonToken({
+		url: `/api/v1/auth/reset_password`,
+		method: "POST",
+		data,
+	});
+	return await new Promise((res) => {
+		setTimeout(() => {
+			res(response);
+		}, 1000);
+	});
+};
+
+export const changePassword = async (data: any): Promise<any> => {
+	const response = await baseRequest({
+		url: `/api/v1/auth/change_password`,
+		method: "POST",
+		data,
+	});
+	return await new Promise((res) => {
+		setTimeout(() => {
+			res(response);
+		}, 1000);
+	});
+};
+
+export const getOrganizations = async (): Promise<any> => {
+	const response = await baseRequestNonToken({
+		url: `/api/v1/organization/yes4all`,
+		method: "GET",
+	});
+	return await new Promise((res) => {
+		setTimeout(() => {
+			res(response);
+		}, 1000);
+	});
+};

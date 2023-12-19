@@ -1,0 +1,316 @@
+import { Button, Grid, Input, TextField, Typography } from "@mui/material";
+import { Container, Box } from "@mui/system";
+import { MuiBreadcrumbs } from "src/components/breadcrumbs";
+import { MuiTable } from "src/components/mui-table";
+import { getPagination } from "src/utils/pagination";
+import { ITopic, ldStyle, normalizeY4AllTree, usePage, IStatePopup } from "../baseld";
+import { LDLayout, useLDLayout } from "../layout";
+import { Skeleton } from "src/components/skeleton";
+import { useQuery } from "react-query";
+import { getTopicTree } from "src/services/ldservice/ld.service";
+import { useMemo, useState } from "react";
+import { FORMAT_DATE } from "src/constants";
+import { formatDateToString } from "src/utils/date";
+import { mockGetLDMange,getTopicTreeMockData } from "src/services/ldservice/ld.mockdata.service";
+import BasicDialog from "src/components/modal";
+
+type ILDMangePopupType = "Add" | "Update" | "Delete"
+
+const CreateTopicPopup = ({ onOpen, onClose, isAdmin = true }) => {
+    const dialogStyle = isAdmin && {
+        height: "311px",
+        width: "340px",
+        padding: "20px 30px"
+    } || {
+        height: "253px",
+        width: "340px",
+        padding: "20px 30px"
+    }
+    const content = isAdmin && (
+        <>
+            <Grid container flexDirection="column">
+                <Grid item>
+                    <Typography variant="h6" color="primary">Create root</Typography>
+                </Grid>
+                <Grid item>
+                    <TextField
+                        sx={{
+                            "& .MuiOutlinedInput-root": {
+                                background: "#fff",
+                            },
+                        }}
+                        size="medium"
+                        name="root"
+                        placeholder="Root topic name"
+                        fullWidth
+                    />
+
+                    {/* <TextField
+							sx={{
+								"& .MuiOutlinedInput-root": {
+									background: "#fff",
+								},
+							}}
+							size="medium"
+							name="email"
+							placeholder="Email"
+							fullWidth
+							{...getValidateFormik({
+								formik,
+								field: "email",
+								required: true,
+							})}
+						/> */}
+                </Grid>
+                <Grid item>
+                    <TextField
+                        sx={{
+                            "& .MuiOutlinedInput-root": {
+                                background: "#fff",
+                            },
+                        }}
+                        size="medium"
+                        name="PIC"
+                        placeholder="PIC"
+                        fullWidth
+                    />
+                </Grid>
+                <Grid item>
+                    <TextField
+                        sx={{
+                            "& .MuiOutlinedInput-root": {
+                                background: "#fff",
+                            },
+                        }}
+                        size="medium"
+                        name="Description"
+                        placeholder="Description"
+                        fullWidth
+                    />
+                </Grid>
+                <Grid item xs={12} textAlign="right">
+					<Button
+						variant="contained"
+						type="button"
+						size="medium"
+						disabled={true}
+						sx={{
+							mr: 2,
+						}}
+						onClick={() => console.log("check", true)}
+					>
+						Save
+					</Button>
+					<Button variant="outlined" type="button" size="medium" onClick={onClose}>
+						Cancel
+					</Button>
+				</Grid>
+            </Grid>
+        </>
+
+    ) || (
+            <></>
+        )
+    return (
+        <>
+            <BasicDialog
+                disabledBackdropClick
+                open={onOpen}
+                handleClose={onClose}
+                sxDialog={dialogStyle}
+            >
+                {content}
+            </BasicDialog>
+        </>
+    )
+}
+const LDManage = () => {
+    console.log('re-render ld manage')
+    const [data, setData] = useState<{ list: ITopic[], total: number }>({ list: [], total: 0 })
+    const {
+        itemsPerPage,
+        page,
+        handleOnPageChange,
+        handleOnRowsPerPageChange,
+    } = usePage();
+    const {
+        treeNormalize,
+        setTreeNormalize,
+        handleOnClick,
+        handleOnCollapse,
+        handleOnFilterChange
+    } = useLDLayout()
+
+    const {
+        isLoading,
+        refetch,
+    } = useQuery([`LDTreeSlideBar`], async () => getTopicTreeMockData(), {
+        keepPreviousData: true,
+        select: (data) => {
+            return data.data;
+        },
+        onSuccess: (fetchedData) => {
+            setTreeNormalize(normalizeY4AllTree(fetchedData));
+        },
+    })
+    useQuery(['LdManage', itemsPerPage, page]
+        , async () => mockGetLDMange('', itemsPerPage, page)
+        , {
+            onSuccess: (fetchedData) => {
+                setData({ list: fetchedData.list as ITopic[], total: fetchedData.total as number });
+            }
+        }
+    );
+    const [statePopup, setStatePopup] = useState<IStatePopup<ILDMangePopupType>>({
+        isOpen: false,
+        type: "",
+        data: {},
+    });
+    const changePopup = (isOpen: boolean, type: ILDMangePopupType, data: any) => {
+        setStatePopup({
+            isOpen: isOpen,
+            type: type,
+            data: data
+        })
+    }
+    const [isChangeOrder,setIsChangeOrder]=useState<boolean>(false)
+    const handleOnChangeOrder=()=>{
+        console.log('run this')
+        setIsChangeOrder(!isChangeOrder);
+        console.log("running change order state on Server",isChangeOrder)
+    }
+    console.log("nbt new render",isChangeOrder)
+
+    const columns = useMemo(() => {
+        return [
+            {
+                header: "Name",
+                minSize: 300,
+                accessorKey: "name",
+                typeFilter: "includesMultipleFilter",
+
+            },
+            {
+                header: "Description",
+                minSize: 100,
+                accessorKey: "description",
+                typeFilter: "includesMultipleFilter",
+                // Cell: ({ cell }) => <>{formatDateToString(cell.getValue(), FORMAT_DATE)}</>,
+            },
+            {
+                header: "Owner",
+                minSize: 100,
+                accessorKey: "owner",
+                typeFilter: "includesMultipleFilter",
+            },
+            {
+                header: "Lastest updated",
+                minSize: 100,
+                accessorKey: "updated_at",
+                Cell: ({ cell }) => <>{formatDateToString(cell.getValue(), FORMAT_DATE)}</>,
+                typeFilter: "includesMultipleFilter",
+            },
+        ];
+    }, []);
+
+    return (
+        <>
+            <LDLayout
+                handleOnClick={handleOnClick}
+                handleOnCollapse={handleOnCollapse}
+                handleOnFilterChange={handleOnFilterChange}
+                treeNormalize={treeNormalize}>
+                <Box sx={{ width: '100%', height: '100%', overflow: 'hidden' }}>
+                    <Skeleton isLoading={false}>
+                        <Box mt={'10px'} ml={'25px'} mr={'25px'} mb={'25px'}>
+                            <Grid container>
+                                <Grid item alignSelf="center" xs>
+                                    <Typography variant="h6" color="primary">
+                                        Manage L&D
+                                    </Typography>
+                                </Grid>
+                                {isChangeOrder && (
+                                    <Grid item>
+                                    <Button
+                                        type="button"
+                                            variant="contained"
+                                            onClick={() => console.log('save')}
+                                            sx={{ mr: 1, }}
+                                        >
+                                            Save
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="outlined"
+                                            onClick={() => setIsChangeOrder(!isChangeOrder)}
+                                            sx={{ mr: 1 }}
+                                        >
+                                            Cancel
+                                        </Button>
+                                    </Grid>
+                                )}
+                                {!isChangeOrder && (
+                                    <Grid item>
+                                        <Button
+                                            type="button"
+                                            variant="contained"
+                                            onClick={() => changePopup(true, 'Add', {})}
+                                            sx={{ mr: 1, }}
+                                        >
+                                            Create topic
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="outlined"
+                                            onClick={handleOnChangeOrder}
+                                            sx={{ mr: 1 }}
+                                        >
+                                            Change order
+                                        </Button>
+                                    </Grid>
+                                )}
+                                
+                            </Grid>
+                        </Box>
+                        <Box mt={'10px'} ml={'25px'} mr={'25px'} mb={'20px'}>
+                            <MuiTable
+                                columns={columns}
+                                loading={false}
+                                data={data.list || []}
+                                enableColumnActions={false}
+                                enableColumnDragging={false}
+                                enableRowDragging={false}
+                                enablePinning={true}
+                                enableColumnResizing={false}
+                                enableColumnOrdering={true}
+                                enableColumnFilters={false}
+                                enableRowVirtualization={false}
+                                enableTopToolbar={false}
+                                enableRowSelection={false}
+                                enableMultiRowSelection={false}
+                                enableRowOrdering={isChangeOrder}
+                                // renderTopToolbarCustomActions={()=><></>}
+                                pagination={{
+                                    ...getPagination({ rowsPerPage: itemsPerPage, page }),
+                                    total: data.total || 0,
+                                    onPageChange: handleOnPageChange,
+                                    onRowsPerPageChange: handleOnRowsPerPageChange,
+                                }}
+                            />
+                        </Box>
+                    </Skeleton>
+                </Box>
+            </LDLayout>
+            {
+                statePopup.isOpen &&
+                (statePopup.type === "Add" || statePopup.type === "Update") && (
+                    <CreateTopicPopup
+                        onOpen={() => changePopup(true, null, {})}
+                        onClose={() => changePopup(false, null, {})}
+                    />
+                )
+            }
+        </>
+    )
+}
+export { LDManage };
